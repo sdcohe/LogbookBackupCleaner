@@ -1,6 +1,6 @@
-# HRDLogbookCleaner
+# LogbookBackupCleaner
 
-HRDLogbookCleaner is a command line utility program that will remove backup files created by HRD Logbook. It allows you to remove backup files based on their age, the number of files, or a combination of both. It is based on a batch file created by Robin Moseley, but has had several enhancements. It is a work in progress as additional requirements are still being discovered.
+LogbookBackupCleaner is a command line utility program that will remove backup files created by HRD Logbook. It allows you to remove backup files based on their age, the number of files, or a combination of both. It is based on a batch file created by Robin Moseley, but has had several enhancements. It is a work in progress as additional requirements are still being discovered.
 
 ## Getting Started
 

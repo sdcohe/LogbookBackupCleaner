@@ -14,13 +14,12 @@ Development on this software uses Visual Studio Community Edition. It was writte
 
 You can create a branch and get the source code. This software depends on the following Nuget packages, which will need to be installed in your solution:
 
-```
-* [Microsoft System.Commandline](https://www.nuget.org/packages/System.CommandLine/) - Command line argument processor (currently a beta)
-* [Serilog](https://www.nuget.org/packages/Serilog/) - Debug Logging
-* [Serilog.Sinks.Console](https://www.nuget.org/packages/Serilog.Sinks.Console) - Console sink for Serilog
-* [Costura.Fody](https://www.nuget.org/packages/Costura.Fody/) - Add in for embedding references as resources 
-```
-
+* [https://www.nuget.org/packages/System.CommandLine]() - Command line argument processor (currently a beta)
+* [https://www.nuget.org/packages/Serilog/]() - Debug Logging
+* [https://www.nuget.org/packages/Serilog.Sinks.Console]() - Console sink for Serilog
+* [https://www.nuget.org/packages/Costura.Fody/]() -  Add in for embedding references as resources
+ 
+  
 ## Running the tests
 
 Currently there are no automated tests for this software.
@@ -39,7 +38,7 @@ Please read [CONTRIBUTING.md]() for details on our code of conduct, and the proc
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 ## Acknowledgments
 

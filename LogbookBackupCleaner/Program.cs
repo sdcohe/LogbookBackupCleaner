@@ -72,7 +72,7 @@ namespace LogbookBackupCleaner
 
             foreach(string zipFile in options.ZipFiles)
             {
-                ProcessZipFile(zipFile, options);
+                ProcessZipArchive(zipFile, options);
             }
 
             Log.CloseAndFlush();
@@ -86,39 +86,39 @@ namespace LogbookBackupCleaner
         /// <summary>
         /// Specify the command line options for the System.CommandLine parser
         /// </summary>
-        /// <param name="foldersOption">List of folders to process</param>
+        /// <param name="foldersOption">List of folders to process for xml and zip backups</param>
         /// <param name="ageInDaysOption">The age in days to retain backup files</param>
         /// <param name="fileCountOption">The number of backup files to always retain</param>
         /// <param name="debugLevelOption">Debug level for Serilog</param>
         /// <param name="quietModeOption">Whether to suppress messages from the application</param>
         /// <param name="testModeOption">Whether to prevent actual file deletion when processing backups. Useful for testing.</param>
-        /// <param name="zipFileOption">List of zip files to process</param>
+        /// <param name="zipFileOption">List of zip archives to process</param>
         private static void BuildCommandLineOptions(out Option<string[]> foldersOption, out Option<int> ageInDaysOption,
             out Option<int> fileCountOption, out Option<DebugLevelType> debugLevelOption,
             out Option<bool> quietModeOption, out Option<bool> testModeOption, out Option<string[]> zipFileOption)
         {
             foldersOption = new Option<string[]>(
                 name: "--folders",
-                description: "A list of backup folders")
+                description: "A list of backup folders containing XML or ZIP backup files")
             { AllowMultipleArgumentsPerToken = true };
             foldersOption.AddAlias("-f");
             foldersOption.IsRequired = false;
 
             zipFileOption = new Option<string[]>(
                 name: "--zipfiles",
-                description: "A list of zip files")
+                description: "A list of zip archives each containing multiple XML backups")
             { AllowMultipleArgumentsPerToken = true };
             zipFileOption.AddAlias("-z");
             zipFileOption.IsRequired = false;
 
             ageInDaysOption = new Option<int>(
                 name: "--age",
-                description: "Age in days");
+                description: "Age in days. Backups older than this will be purged");
             ageInDaysOption.AddAlias("-a");
 
             fileCountOption = new Option<int>(
                 name: "--count",
-                description: "Count of files to retain");
+                description: "Count of files to retain. This option ensures that there will always be some backups not purged regardless of their age.");
             fileCountOption.AddAlias("-c");
 
             debugLevelOption = new Option<DebugLevelType>(
@@ -208,12 +208,24 @@ namespace LogbookBackupCleaner
         /// <param name="options">A container class holding the parsed command line options.</param>
         private static void ProcessFolder(string folder, LogbookCleanerOptions options)
         {
-            // file name pattern is <DB name> backup <date> <time>.xml
-            DisplayMessage(string.Format("Processing backup files in folder {0}", folder));
+            // file name pattern is <DB name> backup <date> <time>.[zip|xml]
+            DisplayMessage(string.Format("Processing XML backup files in folder {0}", folder));
+            Log.Information("Processing XML backups");
+            ProcessFolderForPattern(folder, options, "xml");
+
+            DisplayMessage(string.Format("Processing ZIP backup files in folder {0}", folder));
+            Log.Information("Processing ZIP backups");
+            ProcessFolderForPattern(folder, options, "zip");
+        }
+
+        private static void ProcessFolderForPattern(string folder, LogbookCleanerOptions options, string fileExtension)
+        {
+            string filePattern = string.Format("* backup ????-??-?? ????.{0}", fileExtension);
+            Log.Debug("Processing folder {0} using pattern {1}", folder, filePattern);
 
             try
             {
-                IEnumerable<IGrouping<string, FileInfo>> distinctDBGroups = GroupBackupFilesByLogbook(folder);
+                IEnumerable<IGrouping<string, FileInfo>> distinctDBGroups = GroupBackupFilesByLogbook(folder, filePattern);
                 DisplayMessage(string.Format("This folder contains backups for {0} logs", distinctDBGroups.Count()));
 
                 // process each group
@@ -273,21 +285,21 @@ namespace LogbookBackupCleaner
             }
             catch (Exception ex)
             {
-                DisplayColorMessage(ConsoleColor.Red, string.Format("An error occurred accessing folder {0}: {1}", folder, ex.Message));
+                DisplayColorMessage(ConsoleColor.Red, string.Format("An error occurred while processing folder {0}: {1}", folder, ex.Message));
             }
         }
 
         /// <summary>
-        /// Return all the XML backup files in this folder grouped by log name. This is in case the user
+        /// Return all the backup files in this folder grouped by log name. This is in case the user
         /// has stored backups from multiple logbooks
         /// </summary>
         /// <param name="folder">The name of the folder to search for XML backups</param>
         /// <returns>The backup file names grouped by log</returns>
-        private static IEnumerable<IGrouping<string, FileInfo>> GroupBackupFilesByLogbook(string folder)
+        private static IEnumerable<IGrouping<string, FileInfo>> GroupBackupFilesByLogbook(string folder, string pattern)
         {
             // get a list of backup (xml) files in this folder
             var dir = new DirectoryInfo(folder);
-            FileInfo[] fileList = dir.GetFiles("*.xml");
+            FileInfo[] fileList = dir.GetFiles(pattern);
 
             // group by db name
             IEnumerable<IGrouping<string, FileInfo>> distinctDBGroups = fileList.Select(s => s)
@@ -297,15 +309,15 @@ namespace LogbookBackupCleaner
         }
         #endregion
 
-        #region Zip File Processing
+        #region Zip Archive Processing
         /// <summary>
-        /// Method that will be called once per zip file. Get a list of backup files in this zip file grouped 
+        /// Method that will be called once per zip archive file. Get a list of backup files in this zip archive grouped 
         /// by log (in case the user has multiple logs backed up to the folder). Then process each fiile 
         /// in that group as a candidate for cleanup.
         /// </summary>
-        /// <param name="zipFile">The zip atrchive to process</param>
+        /// <param name="zipFile">The zip archive to process</param>
         /// <param name="options">A container class holding the parsed command line options.</param>
-        private static void ProcessZipFile(string zipFile, LogbookCleanerOptions options)
+        private static void ProcessZipArchive(string zipFile, LogbookCleanerOptions options)
         {
             try
             {

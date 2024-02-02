@@ -26,7 +26,7 @@ Currently there are no automated tests for this software.
 
 ## Deployment
 
-Add additional notes about how to deploy this on a live system
+Executable release version for end user installation is available at [https://kb3hha.com/LogbookBackupCleaner](https://kb3hha.com/LogbookBackupCleaner)
 
 ## Contributing
 
